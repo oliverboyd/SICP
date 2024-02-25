@@ -1,0 +1,102 @@
+(define (deriv exp var)
+  (cond ((number? exp) 0)
+        ((variable? exp)
+         (if (same-variable? exp var) 1 0))
+        ((sum? exp)
+         (make-sum (deriv (addend exp) var)
+                   (deriv (augend exp) var)))
+        ((product? exp)
+         (make-sum
+          (make-product (multiplier exp)
+                        (deriv (multiplicand exp) var))
+          (make-product (deriv (multiplier exp) var)
+                        (multiplicand exp))))
+        ((exponentiation? exp)
+         (make-product (exponent exp)
+                       (make-product (make-exponentiation (base exp)
+                                                          (- (exponent exp) 1))
+                                     (deriv (base exp) var))))
+        (else
+         (error "unknown expression type -- DERIV" exp))))
+
+(define (=number? exp num)
+  (and (number? exp) (= exp num)))
+
+(define (variable? x) (symbol? x))
+
+(define (same-variable? v1 v2)
+  (and (variable? v1) (variable? v2) (eq? v1 v2)))
+
+(define (make-sum a1 a2)
+  (cond ((=number? a1 0) a2)
+        ((=number? a2 0) a1)
+        ((and (number? a1) (number? a2)) (+ a1 a2))
+        ((and (not (pair? a1)) (not (pair? a2))) (list a1 '+ a2))
+        ((and (not (pair? a1)) (pair? a2)) (cons a1 (cons '+ a2)))
+        ((and (not (pair? a2)) (pair? a1)) (cons a2 (cons '+ a1)))
+        (else (append a1 (cons '+ a2)))))
+
+(define (sum? x)
+  (and (pair? x) (memq '+ x)))
+
+(define (addend s)
+  (if (null? (cdr (left '+ s)))
+      (car (left '+ s))
+      (left '+ s)))
+
+(define (augend s)
+  (if (null? (cdr (right '+ s)))
+      (car (right '+ s))
+      (right '+ s)))
+
+(define (make-product m1 m2)
+  (cond ((or (=number? m1 0) (=number? m2 0)) 0)
+        ((=number? m1 1) m2)
+        ((=number? m2 1) m1)
+        ((and (number? m1) (number? m2)) (* m1 m2))
+        ((and (not (pair? m1)) (not (pair? m2))) (list m1 '* m2))
+        ((and (not (pair? m1)) (pair? m2)) (if (sum? m2)
+                                               (append (make-product m1 (addend m2))
+                                                       (cons '+ (make-product m1 (augend m2))))
+                                               (cons m1 (cons '* m2))))
+        ((and (not (pair? m2)) (pair? m1)) (if (sum? m1)
+                                               (append (make-product m2 (addend m1))
+                                                       (cons '+ (make-product m2 (augend m1))))
+                                               (cons m2 (cons '* m1))))
+        (else (if (sum? m1)
+                  (append (make-product (addend m1) m2)
+                          (cons '+ (make-product (augend m1) m2)))
+                  (if (sum? m2)
+                      (append (make-product m1 (addend m2))
+                              (cons '+ (make-product m1 (augend m2))))
+                      (append m1 (cons '* m2)))))))
+
+
+                   
+        
+(define (product? x)
+  (and (pair? x)
+       (memq '* x)
+       (not (sum? x))))
+
+(define (multiplier p) (car p))
+
+(define (multiplicand p)
+  (if (null? (cdddr p))
+      (caddr p)
+      (cons (caddr p) (cdddr p))))
+
+(define (memq item x)
+  (cond ((null? x) false)
+        ((eq? item (car x)) true)
+        (else (memq item (cdr x)))))
+
+(define (right item x)
+  (cond ((null? x) '())
+        ((eq? item (car x)) (cdr x))
+        (else (right item (cdr x)))))
+
+(define (left item x)
+  (cond ((null? x) '())
+        ((eq? item (car x)) '())
+        (else (cons (car x) (left item (cdr x))))))

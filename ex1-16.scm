@@ -1,0 +1,6 @@
+(define (fast-exp b n)
+  (define (fast-exp-iter b counter product)
+    (cond ((= counter 0) product)
+	  ((even? counter) (fast-exp-iter (* b b) (/ counter 2) product))
+	  (else (fast-exp-iter b (- counter 1) (* b product)))))
+  (fast-exp-iter b n 1))

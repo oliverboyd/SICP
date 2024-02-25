@@ -1,0 +1,15 @@
+(define (for-each proc list)
+  (define (inner p l)
+    (if (null? l)
+        ()
+        (cons (p (car l)) (inner p (cdr l)))))
+  (inner proc (reverse list)))
+
+(define (reverse l)
+  (define (append list1 list2)
+    (if (null? list1)
+        list2
+        (cons (car list1) (append (cdr list1) list2))))
+  (if (null? l)
+      ()
+      (append (reverse (cdr l)) (list (car l)))))

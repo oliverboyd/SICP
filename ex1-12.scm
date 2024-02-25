@@ -1,0 +1,5 @@
+(define (p r n)
+(cond ((zero? n) 0)
+      ((and (= r 1) (= n 1)) 1)
+      ((= r (- n 1)) 0)
+      (else (+ (p (- r 1) n) (p (- r 1) (- n 1))))))
